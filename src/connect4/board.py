@@ -16,7 +16,7 @@ class Field:
         :param y: # rows
         """
         assert x > 0 and y > 0, "X and Y must be greater than 0!"
-        # assert x >= 4 or y >= 4, "X or Y must be greater than or equal to 4 in order to meet the win condition!"
+        assert x >= 4 or y >= 4, "X or Y must be greater than or equal to 4 in order to meet the win condition!"
         self.x = x
         self.y = y
 
@@ -101,8 +101,7 @@ class Field:
         checks.append(self._diagonal_check(field))
         checks.append(self._diagonal_check(np.fliplr(field)))
 
-        finder = [True if check is True else False for check in checks]
-        for i, win_condition in enumerate(finder):
+        for i, win_condition in enumerate(checks):
             if win_condition == True:
                 print("Win Condition Met: {}".format(WIN_CONDITIONS[i]))
                 return True
