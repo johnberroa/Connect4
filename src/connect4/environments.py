@@ -1,3 +1,7 @@
+"""
+Game environments that allow Connect4 to be played
+"""
+
 import logging
 import sys
 import time
@@ -22,6 +26,7 @@ class HumanEnvironment:
         self.red_wins = 0
         self.blue_wins = 0
 
+        self.history = []
         LOG.debug("Human environment initialized")
 
     def reset(self):
@@ -35,6 +40,10 @@ class HumanEnvironment:
         self.blue_wins = 0
         LOG.debug("Game reset.")
 
+    def _append_history(self):
+        """Appends the current state of the board to the history"""
+        self.history.append(self.field.display(self.debug))
+
     def play_rounds(self):
         """Plays a round"""
         LOG.debug("Starting new round...")
@@ -45,6 +54,7 @@ class HumanEnvironment:
         print(self.field.display(self.debug))
         while True:
             for player in PLAYERS:
+                self._append_history()
                 result = False
                 while not result:
                     move = input("Where do you want to move, Player {}?: ".format(player))
@@ -67,9 +77,11 @@ class HumanEnvironment:
 
         # Check if the overall game is over
         if self.red_wins >= self.max_score:
+            self._append_history()
             print("Player 'r' wins the entire match!\n\n\n")
             self.new_game()
         elif self.blue_wins >= self.max_score:
+            self._append_history()
             print("Player 'b' wins the entire match!\n\n\n")
             self.new_game()
         else:
@@ -98,20 +110,56 @@ class HumanEnvironment:
         else:
             print("Thank you for playing!")
 
+    @property
+    def display_history(self):
+        print("History of the round:")
+        for board in self.history:  # TODO: Make this flush the std with controls to go to next frame or previous
+            print(board)
+        # Controls something along the line of...
+        # index = 0
+        # choice = input("Previous or next? (p/n)")
+        # if p: index-=1
+        # elif n: index+=1
+        # print(self.history[index])
 
-class RLEnvironment(Env):
 
-    def __init__(self):
-        pass
+class AgentEnvironment(Env):
 
-    def step(self, action):
-        pass
+    def __init__(self, agent, x, y, debug=False):
+        self.field = Field(x, y)
+        self.agent = agent
+
+        self.x = x
+        self.y = y
+
+        self.history = []
+        self.debug = debug
+        LOG.debug("Agent environment initialized")
+
+    def _append_history(self):
+        """Appends the current state of the board to the history"""
+        self.history.append(self.field.display(self.debug))
+
+    def step(self, player, action):
+        """Plays a round"""
+        LOG.debug("Starting new round...")
+        start = time.time()
+
+        self._append_history()
+        result = self.field.place_piece(action, player)
+        if result == 1:
+            print("Player {} wins the round!".format(player))
+        elif result == 2:
+            print("Tie!")
+        end = time.time()
+        print("Round time: {}m\n\n\n".format(round((end - start) / 60, 2)))
+        return result
 
     def reset(self):
-        pass
+        self.field.new_field()
 
     def render(self, mode='human'):
-        pass
+        print(self.field.display(self.debug))
 
 # Heuristic?
 # Plotting

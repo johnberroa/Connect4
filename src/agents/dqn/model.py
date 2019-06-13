@@ -1,3 +1,7 @@
+"""
+Deep Q Network
+"""
+
 class DQN:
     def __init__(self):
         pass

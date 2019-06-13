@@ -1,3 +1,7 @@
+"""
+Connect 4 board with score checking
+"""
+
 import numpy as np
 from colorama import Fore, Style
 
@@ -139,7 +143,12 @@ class Field:
                 representation.append('\n')
         return "".join(representation)
 
-    def display(self, debug):
+    def display(self, debug=False):
+        """
+        Display the board, either as the colored end user product, or the debug display
+        :param debug: bool, true to display the debug display
+        :return:
+        """
         if debug:
             return self.debug_display
         else:

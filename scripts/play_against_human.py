@@ -1,6 +1,14 @@
+"""
+Play script for human players
+"""
+
 import argparse
 import logging
+import os
 import sys
+
+# Append the module to the path so that it can be imported
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
 
 from connect4 import environments
 
@@ -34,3 +42,4 @@ if __name__ == '__main__':
 
     env = environments.HumanEnvironment(max_score=max_score, **kwargs)
     env.play_match()
+    env.display_history
