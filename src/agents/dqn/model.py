@@ -1,51 +1,55 @@
 """
 Deep Q Network
 """
-# Transition = namedtuple('Transition',
-#                         ('state', 'action', 'next_state', 'reward'))
+import tensorflow as tf
+import keras
+from keras.layers import Dense
+from keras.models import Sequential
+# class DQN:
+#     def __init__(self):
+#         self.losses = []
 #
+#     def compile(self):
+#         pass
 #
-# class ReplayMemory(object):
+#     def fit(self):
+#         pass
 #
-#     def __init__(self, capacity):
-#         self.capacity = capacity
-#         self.memory = []
-#         self.position = 0
+#     def predict(self, state):
+#         pass
 #
-#     def push(self, *args):
-#         """Saves a transition."""
-#         if len(self.memory) < self.capacity:
-#             self.memory.append(None)
-#         self.memory[self.position] = Transition(*args)
-#         self.position = (self.position + 1) % self.capacity
+#     def summary(self):
+#         pass
 #
-#     def sample(self, batch_size):
-#         return random.sample(self.memory, batch_size)
+#     def save(self):
+#         pass
 #
-#     def __len__(self):
-#         return len(self.memory)
+#     def load(self):
+#         pass
+#
+#     def plot_curves(self):
+#         pass
+import numpy as np
 
 class DQN:
-    def __init__(self):
-        pass
+    def __init__(self, x, y, num_actions):
+        self.model = Sequential()
+
+        self.x = x
+        self.y = y
+        self.num_actions=num_actions
+
+        self.compile()
 
     def compile(self):
-        pass
+        self.model.add(Dense(100, input_dim=self.x*self.y, activation='relu'))
+        self.model.add(Dense(self.num_actions, activation='linear'))
 
-    def fit(self):
-        pass
+        self.model.compile(optimizer='adam', loss='mse')
 
-    def predict(self):
-        pass
+    def predict(self, state):
+        self.model.predict(np.expand_dims(state,0))
 
-    def summary(self):
-        pass
+    def fit(self, state, q, verbose):
+        self.model.train_on_batch(state, q)
 
-    def save(self):
-        pass
-
-    def load(self):
-        pass
-
-    def plot_curves(self):
-        pass

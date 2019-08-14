@@ -118,6 +118,10 @@ class Field:
         self.field = [[0] * self.y for _ in range(self.x)]
 
     @property
+    def flattened_field(self):
+        return np.array(self.field).flatten()
+
+    @property
     def raw_display(self):
         """Internal representation"""
         return self.field

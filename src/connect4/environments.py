@@ -136,7 +136,7 @@ class SelfPlayAgentEnvironment(Env):
 
         self.reward_range = (0, 1)
         self.action_space = spaces.Discrete(x)
-        self.observation_space = spaces.Box(low=0, high=2, shape=(x, y), dtype=np.int16)
+        self.observation_space = spaces.Box(low=0, high=2, shape=(x* y,), dtype=np.int16)  # flattened representation
 
         self.history = []
         self.red_wins = 0
@@ -165,6 +165,8 @@ class SelfPlayAgentEnvironment(Env):
         action = action_tuple[0]
         assert action in self.action_space, "Invalid action selected!"
         player = action_tuple[1]
+        print("Making move for player %s", PLAYER_MAP[player])
+        print(self.field.colored_display)
         reward = 0
         self._append_history()
 
@@ -177,10 +179,10 @@ class SelfPlayAgentEnvironment(Env):
             print("Tie!")
             reward = TIE_REWARD
         end = time.time()
-        print("Round time: {}m\n\n\n".format(round((end - start) / 60, 2)))
+        print("Step time: {}s\n\n\n".format(round((end - start), 2)))
 
         # For clarity
-        observation = self.field.field
+        observation = self.field.flattened_field
         done = True if result in [1, 2] else False
         self.steps_taken += 1
         return observation, reward, done, {"Red Wins": self.red_wins, "Blue Wins": self.blue_wins,
@@ -195,7 +197,7 @@ class SelfPlayAgentEnvironment(Env):
         self.steps_taken = 0
         self.history = []
         self.field.new_field()
-        return self.field.field
+        return self.field.flattened_field
 
     def render(self, mode='human'):
         """Render for visualization"""
