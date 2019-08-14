@@ -10,12 +10,14 @@ class RandomAgent(AbstractAgent):
     An agent that chooses from its possible actions at random
     """
 
-    def __init__(self, action_space):
+    def __init__(self, action_space, name="Random"):
         """
         Init the random agent
         :param action_space: list of possible actions
+        :param name: the name of the agent
         """
         self.action_space = action_space
+        self.name = name
 
     def choose_action(self, state):
         """

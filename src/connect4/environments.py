@@ -6,10 +6,11 @@ import logging
 import sys
 import time
 
-from gym import Env
+import numpy as np
+from gym import Env, spaces
 
 from .board import Field
-from .settings import PLAYERS
+from .settings import PLAYERS, PLAYER_MAP, WIN_REWARD, TIE_REWARD
 
 LOG = logging.getLogger(__name__)
 
@@ -123,16 +124,24 @@ class HumanEnvironment:
         # print(self.history[index])
 
 
-class AgentEnvironment(Env):
+class SelfPlayAgentEnvironment(Env):
+    metadata = {'render.modes': ['human']}
 
-    def __init__(self, agent, x, y, debug=False):
+    def __init__(self, x, y, debug=False):
+        super().__init__()
         self.field = Field(x, y)
-        self.agent = agent
 
         self.x = x
         self.y = y
 
+        self.reward_range = (0, 1)
+        self.action_space = spaces.Discrete(x)
+        self.observation_space = spaces.Box(low=0, high=2, shape=(x, y), dtype=np.int16)
+
         self.history = []
+        self.red_wins = 0
+        self.blue_wins = 0
+        self.steps_taken = 0
         self.debug = debug
         LOG.debug("Agent environment initialized")
 
@@ -140,26 +149,61 @@ class AgentEnvironment(Env):
         """Appends the current state of the board to the history"""
         self.history.append(self.field.display(self.debug))
 
-    def step(self, player, action):
-        """Plays a round"""
-        LOG.debug("Starting new round...")
+    def step(self, action_tuple):
+        """
+        Run one timestep of the environment's dynamics.
+        Accepts an action and returns a tuple (observation, reward, done, info).
+        Args:
+            action (object): an action provided by the agent
+        Returns:
+            observation (object): agent's observation of the current environment
+            reward (float) : amount of reward returned after previous action
+            done (bool): whether the episode has ended, in which case further step() calls will return undefined results
+            info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
+        """
         start = time.time()
-
+        action = action_tuple[0]
+        assert action in self.action_space, "Invalid action selected!"
+        player = action_tuple[1]
+        reward = 0
         self._append_history()
-        result = self.field.place_piece(action, player)
+
+        result = self.field.place_piece(action, 1)
         if result == 1:
-            print("Player {} wins the round!".format(player))
+            print("Player {} wins the round!".format(PLAYER_MAP[player]))
+            reward = WIN_REWARD
+            self.reset()
         elif result == 2:
             print("Tie!")
+            reward = TIE_REWARD
         end = time.time()
         print("Round time: {}m\n\n\n".format(round((end - start) / 60, 2)))
-        return result
+
+        # For clarity
+        observation = self.field.field
+        done = True if result in [1, 2] else False
+        self.steps_taken += 1
+        return observation, reward, done, {"Red Wins": self.red_wins, "Blue Wins": self.blue_wins,
+                                           "Steps Taken": self.steps_taken}
 
     def reset(self):
+        """
+        Resets the state of the environment and returns an initial observation.
+        Returns:
+            observation (object): the initial observation.
+        """
+        self.steps_taken = 0
+        self.history = []
         self.field.new_field()
+        return self.field.field
 
     def render(self, mode='human'):
+        """Render for visualization"""
         print(self.field.display(self.debug))
+
+    def close(self):
+        """Stops the environment"""
+        self.field = None
 
 # Heuristic?
 # Plotting

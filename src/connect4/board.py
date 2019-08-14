@@ -1,12 +1,14 @@
 """
 Connect 4 board with score checking
 """
-
+import logging, sys
 import numpy as np
 from colorama import Fore, Style
 
-from .settings import BLUE_PLAYER, RED_PLAYER, WIN_CONDITIONS
+from .settings import WIN_CONDITIONS, PLAYERS, PLAYER_MAP
 
+LOG = logging.getLogger(name=__name__)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 class Field:
     """
@@ -34,15 +36,15 @@ class Field:
         :param player: player string
         :return: False if invalid column (full or otherwise), 'Valid' if successful, 1 if win condition achieved
         """
-        assert player in [RED_PLAYER, BLUE_PLAYER], "Invalid player ID!"
+        assert player in PLAYERS, "Invalid player ID!"
         try:
             x = int(x)
             column = self.field[x]
         except (IndexError, ValueError):
-            print("Not a valid column!")
+            LOG.warning("Not a valid column!")
             return False
         if all(column) != 0:
-            print("Full!")
+            LOG.warning("Full!")
             return False
         column[column.index(0)] = player
         self.field[x] = column
@@ -133,14 +135,14 @@ class Field:
         for i in range(board.shape[0]):
             for j in range(board.shape[1]):
                 tile = board[i, j]
-                if tile == 'r':
+                if PLAYER_MAP[tile] == 'r':
                     representation.append("{}R{} ".format(Fore.RED, Style.RESET_ALL))
-                elif tile == 'b':
+                elif PLAYER_MAP[tile] == 'b':
                     representation.append("{}B{} ".format(Fore.BLUE, Style.RESET_ALL))
                 else:
                     representation.append("0 ")
-            if j == board.shape[1] - 1:
-                representation.append('\n')
+                if j == board.shape[1] - 1:
+                    representation.append('\n')
         return "".join(representation)
 
     def display(self, debug=False):
