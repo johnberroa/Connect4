@@ -65,7 +65,7 @@ class DQN:
             state = np.array(states)
         except:
             state = np.expand_dims(np.reshape(state, (self.x, self.y)), 2)
-        if len(state.shape) == 3: # FIXME
+        if len(state.shape) == 3:
             state = np.expand_dims(state, 0)
         try:
             return self.model.predict(state)
