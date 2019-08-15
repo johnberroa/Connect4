@@ -55,7 +55,6 @@ class Field:
         :param player: player representation
         :return: False if invalid column (full or otherwise), 'Valid' if successful, 1 if win condition achieved
         """
-        assert player in PLAYERS, "Invalid player ID!"
         column = self.check_piece(x)
         column[column.index(0)] = player
         self.field[x] = column

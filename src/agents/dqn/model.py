@@ -1,36 +1,10 @@
 """
 Deep Q Network
 """
-import tensorflow as tf
-import keras
-from keras.layers import Dense, BatchNormalization, Conv2D, Flatten
+import numpy as np
+from keras.layers import BatchNormalization, Conv2D, Dense, Flatten
 from keras.models import Sequential
 from keras.optimizers import SGD
-# class DQN:
-#     def __init__(self):
-#         self.losses = []
-#
-#     def compile(self):
-#         pass
-#
-#     def fit(self):
-#         pass
-#
-#     def predict(self, state):
-#         pass
-#
-#     def summary(self):
-#         pass
-#
-#     def save(self):
-#         pass
-#
-#     def load(self):
-#         pass
-#
-#     def plot_curves(self):
-#         pass
-import numpy as np
 
 
 class DQN:
@@ -45,7 +19,7 @@ class DQN:
         self.compile()
 
     def compile(self):
-        self.model.add(Conv2D(8, (3,3), padding='same', input_shape=(self.x, self.y, 1), activation='relu'))
+        self.model.add(Conv2D(8, (3, 3), padding='same', input_shape=(self.x, self.y, 1), activation='relu'))
         self.model.add(Flatten())
         self.model.add(Dense(100, activation='relu'))
         # self.model.add(Dense(100, input_dim=self.x * self.y, activation='relu'))
@@ -61,7 +35,7 @@ class DQN:
         try:
             states = []
             for s in state:
-                states.append(np.expand_dims(np.reshape(s, (self.x, self.y)),2))
+                states.append(np.expand_dims(np.reshape(s, (self.x, self.y)), 2))
             state = np.array(states)
         except:
             state = np.expand_dims(np.reshape(state, (self.x, self.y)), 2)

@@ -5,6 +5,7 @@ Agent that always chooses randomly
 import numpy as np
 from agents.abstract_agent import AbstractAgent
 
+
 class RandomAgent(AbstractAgent):
     """
     An agent that chooses from its possible actions at random

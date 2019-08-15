@@ -176,13 +176,13 @@ class SelfPlayAgentEnvironment(Env):
             if player == 1:
                 self.red_wins += 1
             else:
-                self.blue_wins+=1
+                self.blue_wins += 1
             done = True
         elif result == 2:
             print("Tie!")
             reward = TIE_REWARD
             done = True
-        print()  # newline
+        # print()  # newline
         # For clarity
         observation = self.field.flattened_field
         self.steps_taken += 1
@@ -207,9 +207,9 @@ class SelfPlayAgentEnvironment(Env):
         :return: swapped position list of lists
         """
         temp_field = np.array(field)
-        temp_field[temp_field==1] = 3
-        temp_field[temp_field==2] = 1
-        temp_field[temp_field==3] = 2
+        temp_field[temp_field == 1] = 3
+        temp_field[temp_field == 2] = 1
+        temp_field[temp_field == 3] = 2
         return temp_field.tolist()
 
     def render(self, mode='human'):
