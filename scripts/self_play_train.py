@@ -20,30 +20,37 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "s
 LOG = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
-batch = 128
-episodes = 100
-max_mem = 1000
-
 start = time.time()
 
+batch = 128
+episodes = 1000
+max_mem = 1000
+
 env = environments.SelfPlayAgentEnvironment(7, 6, debug=False)
-red_agent = DQNAgent(action_space=env.action_space, max_memory=max_mem,
-                     int_repr=1)
-blue_agent = DQNAgent(action_space=env.action_space, max_memory=max_mem,
-                      int_repr=2)
+red_agent = DQNAgent(action_space=env.action_space, max_memory=max_mem, int_repr=1)
+blue_agent = DQNAgent(action_space=env.action_space, max_memory=max_mem, int_repr=2)
 # Make weights equal at the start
 blue_agent.policy.model.set_weights(red_agent.policy.model.get_weights())
 agents = [red_agent, blue_agent]
 
+# Flow control parameters
 skip_thresh = 2
 skip_red = False
 skip_blue = False
 trained = False
 only = True
+
+# Plotting variables
 red_steps = 0
 blue_steps = 0
 red_weight_change = []
 blue_weight_change = []
+
+
+class RandomPlayer:
+    def __init__(self):
+        self.int_repr = 2
+
 
 for ep in range(episodes):
     print("EPISODE:", ep + 1)
@@ -115,12 +122,14 @@ for ep in range(episodes):
         if done:
             break
 
+print("END", (time.time() - start) / 60)
+
+# Plot
 # Forward fill the gaps
 red = pd.Series(red_agent.policy.losses)
 red.fillna(method='ffill', inplace=True)
 blue = pd.Series(blue_agent.policy.losses)
 blue.fillna(method='ffill', inplace=True)
-print("END", (time.time() - start) / 60)
 figure, ax = plt.subplots(nrows=2, figsize=(20, 10))
 ax[0].plot(red, 'red')
 for line in red_weight_change:
@@ -131,9 +140,6 @@ for line in blue_weight_change:
     ax[1].axvline(line, color='g', linestyle='--')
 ax[1].set_title('Blue')
 figure.suptitle("Losses for both Players")
-
-
-
 
 
 def test_random_against_random():
@@ -158,11 +164,6 @@ def test_random_against_random():
                 break
 
     return env.red_wins
-
-class RandomPlayer:
-    def __init__(self):
-        self.int_repr = 2
-
 
 
 def test_against_random(best_player):
@@ -197,21 +198,27 @@ def test_against_random(best_player):
 
     return env.red_wins
 
+
 print("*" * 80)
 print("*" * 80)
 print("Starting Test! " * 4)
+# Get best player and reset environment
 best_player = agents[np.argmax([env.red_wins, env.blue_wins])]
-best_player.eps_greedy = 0
 best_player.int_repr = 1
 env.red_wins = 0
 env.blue_wins = 0
 test_episodes = 1000
 
+# Test DQN against Random
 ai_wins = test_against_random(best_player)
 print("AI Wins: {}/{}={}%".format(ai_wins, test_episodes, round(ai_wins / test_episodes, 2)))
-env.red_wins = 0
-env.blue_wins = 0
-test_episodes = 1000
+
+# Test Random against Random
+# env.red_wins = 0
+# env.blue_wins = 0
+# test_episodes = 1000
 # red_wins = test_random_against_random()
 # print("Red (Random) Wins: {}/{}={}%".format(red_wins, test_episodes, round(red_wins / test_episodes, 2)))
-# plt.show()
+
+# Show the plot at the end
+plt.show()
