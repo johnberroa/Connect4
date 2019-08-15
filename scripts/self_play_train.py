@@ -58,60 +58,69 @@ if __name__ == '__main__':
         kwargs = {"x": x, "y": y}
 
     import time
+
     start = time.time()
 
-    env = environments.SelfPlayAgentEnvironment(7,6,debug=debug, **kwargs)
-    # FIXME
-    red_agent = DQNAgent(action_space=env.action_space, max_memory=1000, int_repr=1)#lr=lr, batch=batch, layers=layers)
-    blue_agent = DQNAgent(action_space=env.action_space, max_memory=1000, int_repr=2)#lr=lr, batch=batch, layers=layers)
+    env_red = environments.SelfPlayAgentEnvironment(7, 6, debug=debug, **kwargs)
+    env_blue = environments.SelfPlayAgentEnvironment(7, 6, debug=debug, **kwargs)
+    red_agent = DQNAgent(action_space=env_red.action_space, max_memory=1000,
+                         int_repr=1)  # lr=lr, batch=batch, layers=layers)
+    blue_agent = DQNAgent(action_space=env_blue.action_space, max_memory=1000,
+                          int_repr=2)  # lr=lr, batch=batch, layers=layers)
     agents = [red_agent, blue_agent]
+    envs = [env_red, env_blue]
 
     skip_red = False
     skip_blue = False
     trained = False
     only = True
     for ep in range(episodes):
-        state = env.reset()
+        state_red = env_red.reset()
+        state_blue = env_blue.reset()
+        states = [state_red, state_blue]
         done = False
 
         while True:
             for player in agents:
                 valid = False
                 while not valid:  # Enforce valid moves
-                    action = player.choose_action(state)
-                    valid = env.field.check_piece(action)
-                next_state, reward, done, info = env.step((action, player.int_repr))
-
+                    action = player.choose_action(states[player.int_repr - 1])
+                    valid = envs[player.int_repr - 1].field.check_piece(action)
+                next_state, reward, done, info = envs[player.int_repr - 1].step((action, 1))
+                if player.int_repr == 1:
+                    envs[1].swap_field(envs[0].field.field)
+                else:
+                    envs[0].swap_field(envs[1].field.field)
                 # Add experience to memory
-                player.add_to_memory((state, action, reward, next_state, done))
-                print("VEFORE TRAIN: SR {} SB {}".format(skip_red, skip_blue))
+                player.add_to_memory((states[player.int_repr - 1], action, reward, next_state, done))
                 if player.int_repr == 1 and not skip_red:
                     trained = player.train(128)
                 elif player.int_repr == 2 and not skip_blue:
                     trained = player.train(128)
                 else:
-                    print("TRAINING PLAYER SKIPPED DUE TO INBALANCE!!!!!!")
+                    print("TRAINING PLAYER SKIPPED DUE TO IMBALANCE!!!!!!")
 
-                env.render()
-                state = next_state
+                envs[0].render()
+                states[player.int_repr - 1] = next_state
                 if trained and only:
-                    env.red_wins = 0
-                    env.blue_wins = 0
+                    env_red.red_wins = 0
+                    env_red.blue_wins = 0
+                    env_blue.red_wins = 0
+                    env_blue.blue_wins = 0
                     print("TRAINING HAS BEGUN")
-                    only = False # make this happen only once
+                    only = False  # make this happen only once
                 else:
-                    print("IN CONDITIONAL")
-                    print("R{}-{}B".format(env.red_wins, env.blue_wins))
-                    # Prevent runaway models
-                    if env.red_wins - env.blue_wins > 10 and not skip_red:
-                        print("UPDATING BLUE AGENT WEIGHTS ", env.red_wins - env.blue_wins)
+                    print("R{}-{}B".format(envs[0].red_wins, envs[1].red_wins))
+                    # Prevent runaway models; all reference red player because that is player 1
+                    if env_red.red_wins - env_blue.red_wins > 10 and not skip_red:
+                        print("UPDATING BLUE AGENT WEIGHTS ", env_red.red_wins - env_blue.red_wins)
                         blue_agent.policy.model.set_weights(red_agent.policy.model.get_weights())
                         skip_red = True
-                    elif env.blue_wins - env.red_wins > 10 and not skip_blue:
-                        print("UPDATING RED AGENT WEIGHTS ", env.blue_wins - env.red_wins)
+                    elif env_blue.red_wins - env_red.red_wins > 10 and not skip_blue:
+                        print("UPDATING RED AGENT WEIGHTS ", env_blue.red_wins - env_red.red_wins)
                         red_agent.policy.model.set_weights(blue_agent.policy.model.get_weights())
                         skip_blue = True
-                    elif np.abs(env.red_wins - env.blue_wins) <= 10:
+                    elif np.abs(env_red.red_wins - env_blue.red_wins) <= 10:
                         skip_blue = False
                         skip_red = False
 
@@ -121,11 +130,11 @@ if __name__ == '__main__':
                 break
 
     print("END", (time.time() - start) / 60)
-    figure, ax = plt.subplots(nrows=2, figsize=(20,10))
+    figure, ax = plt.subplots(nrows=2, figsize=(20, 10))
     ax[0].plot(red_agent.policy.losses)
     ax[0].set_title("Red")
     ax[1].plot(blue_agent.policy.losses)
     ax[1].set_title('Blue')
     plt.show()
 
-            # TODO: Saving shouldinvlude the board size
+    # TODO: Saving shouldinvlude the board size

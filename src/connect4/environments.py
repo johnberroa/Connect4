@@ -202,6 +202,18 @@ class SelfPlayAgentEnvironment(Env):
         self.field.new_field()
         return self.field.flattened_field
 
+    def swap_field(self, field):
+        """
+        Swaps the player positions
+        :param field: list of list representation
+        :return: swapped position list of lists
+        """
+        temp_field = np.array(field)
+        temp_field[temp_field==1] = 3
+        temp_field[temp_field==2] = 1
+        temp_field[temp_field==3] = 2
+        self.field.field = temp_field.tolist()
+
     def render(self, mode='human'):
         """Render for visualization"""
         print(self.field.display(self.debug))

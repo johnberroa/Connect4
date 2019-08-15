@@ -10,6 +10,7 @@ from .settings import WIN_CONDITIONS, PLAYERS, PLAYER_MAP
 LOG = logging.getLogger(name=__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
+
 class Field:
     """
     Connect4 Field represented as a list of lists.
@@ -46,6 +47,7 @@ class Field:
             return False
         else:
             return column
+
     def place_piece(self, x, player):
         """
         Places a piece in the given column by the given player.

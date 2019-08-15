@@ -70,7 +70,7 @@ class DQN:
         try:
             return self.model.predict(state)
         except ValueError:
-            print()
+            print("Error")
 
     def fit(self, state, q, verbose):
         states = []
@@ -80,5 +80,5 @@ class DQN:
         try:
             loss = self.model.train_on_batch(state, q)
         except ValueError:
-            print()
+            print("Error")
         self.losses.append(loss)
