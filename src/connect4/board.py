@@ -29,23 +29,32 @@ class Field:
         self.field = None
         self.new_field()
 
-    def place_piece(self, x, player):
+    def check_piece(self, x):
         """
-        Places a piece in the given column by the given player.
-        :param x: column index
-        :param player: player string
-        :return: False if invalid column (full or otherwise), 'Valid' if successful, 1 if win condition achieved
+        Make sure the selected field is valid.
+        :param x: column to add a piece
+        :return: bool
         """
-        assert player in PLAYERS, "Invalid player ID!"
         try:
             x = int(x)
             column = self.field[x]
         except (IndexError, ValueError):
-            LOG.warning("Not a valid column!")
+            LOG.debug("Not a valid column!")
             return False
         if all(column) != 0:
-            LOG.warning("Full!")
+            LOG.debug("Full!")
             return False
+        else:
+            return column
+    def place_piece(self, x, player):
+        """
+        Places a piece in the given column by the given player.
+        :param x: column index
+        :param player: player representation
+        :return: False if invalid column (full or otherwise), 'Valid' if successful, 1 if win condition achieved
+        """
+        assert player in PLAYERS, "Invalid player ID!"
+        column = self.check_piece(x)
         column[column.index(0)] = player
         self.field[x] = column
         if self.check_for_winner(player):

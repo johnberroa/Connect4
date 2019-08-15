@@ -58,11 +58,11 @@ class HumanEnvironment:
                 self._append_history()
                 result = False
                 while not result:
-                    move = input("Where do you want to move, Player {}?: ".format(player))
+                    move = input("Where do you want to move, Player {}?: ".format(PLAYER_MAP[player]))
                     result = self.field.place_piece(move, player)
                 print(self.field.display(self.debug))
                 if result == 1:
-                    print("Player {} wins the round!".format(player))
+                    print("Player {} wins the round!".format(PLAYER_MAP[player]))
                     if player == 'r':
                         self.red_wins += 1
                     else:
@@ -136,7 +136,7 @@ class SelfPlayAgentEnvironment(Env):
 
         self.reward_range = (0, 1)
         self.action_space = spaces.Discrete(x)
-        self.observation_space = spaces.Box(low=0, high=2, shape=(x* y,), dtype=np.int16)  # flattened representation
+        self.observation_space = spaces.Box(low=0, high=2, shape=(x * y,), dtype=np.int16)  # flattened representation
 
         self.history = []
         self.red_wins = 0
@@ -165,25 +165,28 @@ class SelfPlayAgentEnvironment(Env):
         action = action_tuple[0]
         assert action in self.action_space, "Invalid action selected!"
         player = action_tuple[1]
-        print("Making move for player %s", PLAYER_MAP[player])
-        print(self.field.colored_display)
+        done = False
+        LOG.info("Making move for player %s", PLAYER_MAP[player])
         reward = 0
         self._append_history()
 
-        result = self.field.place_piece(action, 1)
+        result = self.field.place_piece(action, player)
         if result == 1:
             print("Player {} wins the round!".format(PLAYER_MAP[player]))
             reward = WIN_REWARD
-            self.reset()
+            if player == 1:
+                self.red_wins += 1
+            else:
+                self.blue_wins+=1
+            done = True
         elif result == 2:
             print("Tie!")
             reward = TIE_REWARD
+            done = True
         end = time.time()
-        print("Step time: {}s\n\n\n".format(round((end - start), 2)))
-
+        print()  # newline
         # For clarity
         observation = self.field.flattened_field
-        done = True if result in [1, 2] else False
         self.steps_taken += 1
         return observation, reward, done, {"Red Wins": self.red_wins, "Blue Wins": self.blue_wins,
                                            "Steps Taken": self.steps_taken}
