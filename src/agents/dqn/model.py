@@ -49,9 +49,9 @@ class DQN:
         self.model.add(Flatten())
         self.model.add(Dense(100, activation='relu'))
         # self.model.add(Dense(100, input_dim=self.x * self.y, activation='relu'))
-        # self.model.add(BatchNormalization())
+        self.model.add(BatchNormalization())
         self.model.add(Dense(50, activation='relu'))
-        # self.model.add(BatchNormalization())
+        self.model.add(BatchNormalization())
         self.model.add(Dense(self.num_actions, activation='linear'))
 
         sgd = SGD(lr=.0001)

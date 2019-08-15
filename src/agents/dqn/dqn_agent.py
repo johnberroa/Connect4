@@ -68,10 +68,10 @@ class DQNAgent(AbstractAgent):
             state, action, reward, next_state, done = self._unpack_batch(batch)
             q_update = reward
             if 1 in done:  # prevent empty array updates when there are no dones
-                q_update[done==True] = (reward[done==True] + self.gamma * np.amax(self.policy.predict(next_state[done==True])))
+                q_update[done==True] = .01*(reward[done==True] + self.gamma * np.amax(self.policy.predict(next_state[done==True])))
             q_values = self.policy.predict(state)
             q_values = self._apply_q_update(q_values, q_update, action)
-            self.policy.fit(state, q_values, verbose=0)  #FIXME to tensorflow
+            self.policy.fit(state, q_values, verbose=0)
             return True
         else:
             return False

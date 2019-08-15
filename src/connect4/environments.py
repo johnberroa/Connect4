@@ -161,7 +161,6 @@ class SelfPlayAgentEnvironment(Env):
             done (bool): whether the episode has ended, in which case further step() calls will return undefined results
             info (dict): contains auxiliary diagnostic information (helpful for debugging, and sometimes learning)
         """
-        start = time.time()
         action = action_tuple[0]
         assert action in self.action_space, "Invalid action selected!"
         player = action_tuple[1]
@@ -183,7 +182,6 @@ class SelfPlayAgentEnvironment(Env):
             print("Tie!")
             reward = TIE_REWARD
             done = True
-        end = time.time()
         print()  # newline
         # For clarity
         observation = self.field.flattened_field
@@ -212,7 +210,7 @@ class SelfPlayAgentEnvironment(Env):
         temp_field[temp_field==1] = 3
         temp_field[temp_field==2] = 1
         temp_field[temp_field==3] = 2
-        self.field.field = temp_field.tolist()
+        return temp_field.tolist()
 
     def render(self, mode='human'):
         """Render for visualization"""

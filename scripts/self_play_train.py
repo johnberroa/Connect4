@@ -58,69 +58,83 @@ if __name__ == '__main__':
         kwargs = {"x": x, "y": y}
 
     import time
-
     start = time.time()
 
-    env_red = environments.SelfPlayAgentEnvironment(7, 6, debug=debug, **kwargs)
-    env_blue = environments.SelfPlayAgentEnvironment(7, 6, debug=debug, **kwargs)
-    red_agent = DQNAgent(action_space=env_red.action_space, max_memory=1000,
-                         int_repr=1)  # lr=lr, batch=batch, layers=layers)
-    blue_agent = DQNAgent(action_space=env_blue.action_space, max_memory=1000,
-                          int_repr=2)  # lr=lr, batch=batch, layers=layers)
+    env = environments.SelfPlayAgentEnvironment(7,6,debug=debug, **kwargs)
+    red_agent = DQNAgent(action_space=env.action_space, max_memory=1000, int_repr=1)#lr=lr, batch=batch, layers=layers)
+    blue_agent = DQNAgent(action_space=env.action_space, max_memory=1000, int_repr=2)#lr=lr, batch=batch, layers=layers)
     agents = [red_agent, blue_agent]
-    envs = [env_red, env_blue]
 
+    skip_thresh = 2
     skip_red = False
     skip_blue = False
     trained = False
     only = True
+    red_steps = 0
+    blue_steps = 0
+    red_weight_change = []
+    blue_weight_change = []
     for ep in range(episodes):
-        state_red = env_red.reset()
-        state_blue = env_blue.reset()
-        states = [state_red, state_blue]
+        print("EPISODE:", ep+1)
+        state = env.reset()
         done = False
-
         while True:
             for player in agents:
+                if player.int_repr == 2:  # Swap 1 and 2 so that the blue env uses its weights properly
+                    state = np.array(env.swap_field(env.field.field)).flatten()
                 valid = False
                 while not valid:  # Enforce valid moves
-                    action = player.choose_action(states[player.int_repr - 1])
-                    valid = envs[player.int_repr - 1].field.check_piece(action)
-                next_state, reward, done, info = envs[player.int_repr - 1].step((action, 1))
-                if player.int_repr == 1:
-                    envs[1].swap_field(envs[0].field.field)
-                else:
-                    envs[0].swap_field(envs[1].field.field)
-                # Add experience to memory
-                player.add_to_memory((states[player.int_repr - 1], action, reward, next_state, done))
-                if player.int_repr == 1 and not skip_red:
-                    trained = player.train(128)
-                elif player.int_repr == 2 and not skip_blue:
-                    trained = player.train(128)
-                else:
-                    print("TRAINING PLAYER SKIPPED DUE TO IMBALANCE!!!!!!")
+                    action = player.choose_action(state)
+                    valid = env.field.check_piece(action)
+                next_state, reward, done, info = env.step((action, player.int_repr))
 
-                envs[0].render()
-                states[player.int_repr - 1] = next_state
-                if trained and only:
-                    env_red.red_wins = 0
-                    env_red.blue_wins = 0
-                    env_blue.red_wins = 0
-                    env_blue.blue_wins = 0
-                    print("TRAINING HAS BEGUN")
-                    only = False  # make this happen only once
+                # Add experience to memory
+                player.add_to_memory((state, action, reward, next_state, done))
+                print("SIZE OF MEMORY:", len(player.memory))
+                if player.int_repr == 1 and not skip_red:
+                    print("TRAINING RED")
+                    trained = player.train(batch)
+                    if not only:
+                        red_steps+=1
+                elif player.int_repr == 2 and not skip_blue:
+                    print("TRAINING BLUE")
+                    trained = player.train(batch)
+                    if not only:
+                        blue_steps+=1
+                elif player.int_repr == 1 and skip_red:
+                    print("SKIP RED TRAINING")
+                    player.policy.losses.append(np.nan)
+                    if not only:
+                        red_steps+=1
+                elif player.int_repr == 2 and skip_blue:
+                    print("SKIP BLUE TRAINING")
+                    player.policy.losses.append(np.nan)
+                    if not only:
+                        blue_steps+=1
                 else:
-                    print("R{}-{}B".format(envs[0].red_wins, envs[1].red_wins))
-                    # Prevent runaway models; all reference red player because that is player 1
-                    if env_red.red_wins - env_blue.red_wins > 10 and not skip_red:
-                        print("UPDATING BLUE AGENT WEIGHTS ", env_red.red_wins - env_blue.red_wins)
+                    raise RuntimeError("Shouldn't be here!")
+
+                env.render()
+                state = next_state
+                if trained and only:
+                    env.red_wins = 0
+                    env.blue_wins = 0
+                    print("TRAINING HAS BEGUN")
+                    only = False # make this happen only once
+                else:
+                    print("R{}-{}B".format(env.red_wins, env.blue_wins))
+                    # Prevent runaway models
+                    if env.red_wins - env.blue_wins > skip_thresh and not skip_red:
+                        print("UPDATING BLUE AGENT WEIGHTS ", env.red_wins - env.blue_wins)
+                        blue_weight_change.append(blue_steps)
                         blue_agent.policy.model.set_weights(red_agent.policy.model.get_weights())
                         skip_red = True
-                    elif env_blue.red_wins - env_red.red_wins > 10 and not skip_blue:
-                        print("UPDATING RED AGENT WEIGHTS ", env_blue.red_wins - env_red.red_wins)
+                    elif env.blue_wins - env.red_wins > skip_thresh and not skip_blue:
+                        print("UPDATING RED AGENT WEIGHTS ", env.blue_wins - env.red_wins)
+                        red_weight_change.append(red_steps)
                         red_agent.policy.model.set_weights(blue_agent.policy.model.get_weights())
                         skip_blue = True
-                    elif np.abs(env_red.red_wins - env_blue.red_wins) <= 10:
+                    elif np.abs(env.red_wins - env.blue_wins) <= skip_thresh:
                         skip_blue = False
                         skip_red = False
 
@@ -130,11 +144,15 @@ if __name__ == '__main__':
                 break
 
     print("END", (time.time() - start) / 60)
-    figure, ax = plt.subplots(nrows=2, figsize=(20, 10))
+    figure, ax = plt.subplots(nrows=2, figsize=(20,10))
     ax[0].plot(red_agent.policy.losses)
+    for line in red_weight_change:
+        ax[0].axvline(line, color='red')
     ax[0].set_title("Red")
     ax[1].plot(blue_agent.policy.losses)
+    for line in blue_weight_change:
+        ax[1].axvline(line, color='red')
     ax[1].set_title('Blue')
     plt.show()
 
-    # TODO: Saving shouldinvlude the board size
+            # TODO: Saving shouldinvlude the board size
